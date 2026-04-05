@@ -39,7 +39,8 @@ def run(
 
     model = DDP(
         model,
-        device_ids=[local_rank]
+        device_ids=[local_rank],
+        find_unused_parameters=True
     )
 
     param_groups = get_param_groups(model.module, config.lr_backbone, config.lr_other)

@@ -2,7 +2,7 @@ import os
 
 import torch
 import torch.distributed as dist
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 
 
 def set_seed(seed: int) -> None:
