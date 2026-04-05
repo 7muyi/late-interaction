@@ -6,8 +6,10 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
 from base import BaseTokenizer, BaseConfig
-from utils import set_seed, setup_ddp, cleanup_ddp, get_scheduler, get_param_groups, log_metrics, save_checkpoint, to_device
 from dataloader import get_dataloader
+from utils import (set_seed, setup_ddp, cleanup_ddp,
+                   get_scheduler, get_param_groups, log_metrics,
+                   save_checkpoint, to_device, MixedPrecisionManager)
 
 
 def run(
@@ -37,7 +39,8 @@ def run(
 
     model = DDP(
         model,
-        device_ids=[local_rank]
+        device_ids=[local_rank],
+        find_unused_parameters=True
     )
 
     param_groups = get_param_groups(model.module, config.lr_backbone, config.lr_other)
@@ -52,6 +55,8 @@ def run(
     if rank == 0:
         os.makedirs(config.checkpoint_path, exist_ok=True)
     writer = SummaryWriter(os.path.join(config.checkpoint_path, "log")) if rank == 0 else None
+
+    amp = MixedPrecisionManager(config.amp)
 
     global_step = 0
     accumulation_loss = 0.0
@@ -73,24 +78,22 @@ def run(
                 # calculate Query - Document score
                 Q = to_device(Q, device)
                 D = to_device(D, device)
-                scores = model(Q, D)
+                with amp.context():
+                    scores = model(Q, D)
 
-                # Labels: each query's positive doc is at index i*N (first doc in each group)
-                labels = torch.arange(scores.shape[0], dtype=torch.long, device=device) * N
-                loss = torch.nn.functional.cross_entropy(scores / config.temperature, labels, reduction="mean")
+                    # Labels: each query's positive doc is at index i*N (first doc in each group)
+                    labels = torch.arange(scores.shape[0], dtype=torch.long, device=device) * N
+                    loss = torch.nn.functional.cross_entropy(scores / config.temperature, labels, reduction="mean")
 
                 # Scale loss for gradient accumulation
                 norm_loss = loss / config.accumulation_steps
-                norm_loss.backward()
+                amp.backward(norm_loss)
 
                 accumulation_loss += loss.item()
                 accumulation_count += 1
 
             if not is_accumulation_step:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                optimizer.step()
-                scheduler.step()
-                optimizer.zero_grad(set_to_none=True)
+                amp.step(model, optimizer, scheduler, max_grad_norm=1.0)
 
                 global_step += 1
 

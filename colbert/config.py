@@ -17,6 +17,7 @@ class Config(BaseConfig):
     dataset_path: str = ""
     checkpoint_path: str = ""
 
+    amp: bool = True
     epoch: int = 5
     bsize: int = 64
     accumulation_steps: int = 4
