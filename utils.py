@@ -2,6 +2,7 @@ import os
 
 import torch
 import torch.distributed as dist
+from contextlib import contextmanager, nullcontext
 
 
 def set_seed(seed: int) -> None:
@@ -108,3 +109,36 @@ def save_checkpoint(model, optimizer, scheduler, epoch: int, global_step: int, c
 
 def to_device(batch: tuple[torch.Tensor, ...], device: torch.device) -> tuple[torch.Tensor, ...]:
     return tuple(t.to(device) for t in batch)
+
+
+class MixedPrecisionManager():
+    def __init__(self, activated) -> None:
+        self.activated = activated
+
+        if self.activated:
+            self.scaler = torch.amp.GradScaler(device="cuda")
+
+    def context(self):
+        return torch.amp.autocast("cuda") if self.activated else nullcontext()
+
+    def backward(self, loss) -> None:
+        if self.activated:
+            self.scaler.scale(loss).backward()
+        else:
+            loss.backward()
+
+    def step(self, colbert, optimizer, scheduler=None, max_grad_norm: float = 1.0) -> None:
+        if self.activated:
+            self.scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(colbert.parameters(), max_grad_norm)
+
+            self.scaler.step(optimizer)
+            self.scaler.update()
+        else:
+            torch.nn.utils.clip_grad_norm_(colbert.parameters(), max_grad_norm)
+            optimizer.step()
+
+        if scheduler is not None:
+            scheduler.step()
+
+        optimizer.zero_grad(set_to_none=True)
