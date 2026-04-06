@@ -21,11 +21,11 @@ class Config(BaseConfig):
     amp: bool = True
     epoch: int = 5
     bsize: int = 64
-    accumulation_steps: int = 4
-    warmup: int = 1000
-    lr_backbone: float = 3e-6
-    lr_other: float = 1e-5
-    lr_min_ratio: float = 0.1
+    # accumulation_steps: int = 4
+    # warmup: int = 1000
+    # lr_backbone: float = 3e-6
+    # lr_other: float = 1e-5
+    # lr_min_ratio: float = 0.1
 
     log_interval: int = 50
 
