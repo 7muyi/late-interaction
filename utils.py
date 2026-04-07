@@ -12,11 +12,9 @@ def set_seed(seed: int) -> None:
 
 def sv_score(qry_repr: torch.Tensor, doc_repr: torch.Tensor, pairwise: bool = False) -> torch.Tensor:
     if pairwise:
-        # TODO: avoiding explicit reshape by using broadcasting
         N = doc_repr.shape[0] // qry_repr.shape[0]
-        qry_repr = qry_repr.unsqueeze(1)  # Q, 1, d
         doc_repr = doc_repr.view(-1, N, doc_repr.shape[-1])  # Q, N, d
-        scores = (qry_repr * doc_repr).sum(-1)  # Q, N
+        scores = (qry_repr.unsqueeze(1) * doc_repr).sum(-1)  # Q, N
     else:
         scores = qry_repr @ doc_repr.transpose(0, 1)  # Q, D
     return scores
@@ -24,13 +22,12 @@ def sv_score(qry_repr: torch.Tensor, doc_repr: torch.Tensor, pairwise: bool = Fa
 
 def mv_score(qry_repr: torch.Tensor, doc_repr: torch.Tensor, pairwise: bool = False) -> torch.Tensor:
     if pairwise:
-        # TODO: avoiding explicit reshape by using broadcasting
         N = doc_repr.shape[0] // qry_repr.shape[0]
 
-        Q = qry_repr.unsqueeze(1).repeat_interleave(N, dim=1)  # Q, N, Lq, d
+        Q = qry_repr.unsqueeze(1)  # Q, 1, Lq, d
         D = doc_repr.view(-1, N, *doc_repr.shape[-2:])  # Q, N, Ld, d
 
-        scores = torch.einsum("bnid,bnjd->bnij", Q, D)  # Q, N, Lq, Ld
+        scores = torch.einsum("bild,bnjd->bnij", Q, D)  # Q, N, Lq, Ld
     else:  # inbatch negative sampling
         scores = torch.einsum("qik,djk->qdij", qry_repr, doc_repr)  # Q, D, Lq, Ld
     return scores
@@ -78,7 +75,7 @@ def get_scheduler(optimizer, warmup_steps, total_steps, min_ratio):
 
 def get_param_groups(model, lr_backbone: float, lr_other: float):
     llm_params = list(model.llm.parameters())
-    llm_ids = {id(p) for p in model.llm.parameters()}
+    llm_ids = {id(p) for p in llm_params}
     other_params = [p for p in model.parameters() if id(p) not in llm_ids]
     return [
         {"params": llm_params, "lr": lr_backbone},
@@ -93,18 +90,9 @@ def log_metrics(writer, records: dict, step: int) -> None:
         writer.add_scalar(f"{prefix}/{k}", val, step)
 
 
-def save_checkpoint(model, optimizer, scheduler, epoch: int, global_step: int, config, path: str) -> None:
-    torch.save(
-        {
-            "epoch": epoch,
-            "global_step": global_step,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict(),
-            "config": config,
-        },
-        path,
-    )
+def save_checkpoint(path: str, model_state_dict, **kwargs) -> None:
+    payload = {"model_state_dict": model_state_dict, **kwargs}
+    torch.save(payload, path)
 
 
 def to_device(batch: tuple[torch.Tensor, ...], device: torch.device) -> tuple[torch.Tensor, ...]:

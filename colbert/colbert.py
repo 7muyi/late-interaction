@@ -25,8 +25,8 @@ class ColBERT(nn.Module):
         tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {
-            "tok_repr": tok_repr,
-            "tok_mask": attention_mask
+            "mv_repr": tok_repr,
+            "mv_mask": attention_mask
         }
 
     def encode_qry(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -37,7 +37,7 @@ class ColBERT(nn.Module):
 
     @staticmethod
     def score(qry_repr: dict, doc_repr: dict, pairwise: bool = False) -> torch.Tensor:
-        return maxsum(mv_score(qry_repr["tok_repr"], doc_repr["tok_repr"], pairwise))
+        return maxsum(mv_score(qry_repr["mv_repr"], doc_repr["mv_repr"], pairwise))
 
     def forward(self, Q: tuple[torch.Tensor], D: tuple[torch.Tensor]) -> torch.Tensor:
         Q = self.encode_qry(*Q)
