@@ -1,12 +1,14 @@
 import torch
 from transformers import AutoTokenizer
 
+from dataclasses import dataclass
+
 
 class BaseTokenizer:
-    def __init__(self, pretrained_model: str, qry_maxlen: int, doc_maxlen: int) -> None:
-        self.tok = AutoTokenizer.from_pretrained(pretrained_model)
-        self.qry_maxlen = qry_maxlen
-        self.doc_maxlen = doc_maxlen
+    def __init__(self, config) -> None:
+        self.tok = AutoTokenizer.from_pretrained(config.pretrained_model)
+        self.qry_maxlen = config.qry_maxlen
+        self.doc_maxlen = config.doc_maxlen
 
         # special tokens: [Q], [D], [SEP], [CLS], [PAD]
         self.Q_token = "[Q]"
@@ -31,5 +33,5 @@ class BaseTokenizer:
     def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor]:
         raise NotImplementedError()
 
-    def tensorize_doc(self, texts: list[str])  -> tuple[torch.Tensor]:
+    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor]:
         raise NotImplementedError()

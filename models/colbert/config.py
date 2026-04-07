@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 
-from base.config import BaseConfig
-
 
 @dataclass
-class Config(BaseConfig):
+class Config:
     # ColBERT parameters
     pretrained_model: str = "bert-base-uncased"
     dim: int = 128
