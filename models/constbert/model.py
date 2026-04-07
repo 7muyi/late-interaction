@@ -2,17 +2,19 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel
 
+from base import BaseModel
 from utils import mv_score, maxsum
+from .config import Config
 
 
-class ConstBERT(nn.Module):
-    def __init__(self, pretrained_model: str, dim: int, vectors_per_passage: int, doc_maxlen: int) -> None:
+class ConstBERT(BaseModel):
+    def __init__(self, config: Config) -> None:
         super().__init__()
-        self.llm = AutoModel.from_pretrained(pretrained_model)
-        self.proj = nn.Linear(self.llm.config.hidden_size, dim)
+        self.llm = AutoModel.from_pretrained(config.pretrained_model)
+        self.proj = nn.Linear(self.llm.config.hidden_size, config.dim)
 
-        self.C = vectors_per_passage
-        self.doc_maxlen = doc_maxlen
+        self.C = config.vectors_per_passage
+        self.doc_maxlen = config.doc_maxlen
 
         self.W = nn.Parameter(torch.empty(self.doc_maxlen, self.C))
 
