@@ -24,7 +24,7 @@ class Config(BaseConfig):
     accumulation_steps: int = 4
     warmup: int = 1000
     lr_backbone: float = 3e-6
-    lr_other: float = 1e-5
+    lr_other: float = 3e-6
     lr_min_ratio: float = 0.1
 
     log_interval: int = 50

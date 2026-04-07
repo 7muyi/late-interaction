@@ -21,8 +21,8 @@ class TokenPooling(nn.Module):
         nn.init.zeros_(self.proj.bias)
     
     def hierarchical_pooling(self, encode_outputs: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
-        tok_repr = encode_outputs["tok_repr"]
-        tok_mask = encode_outputs["tok_mask"]
+        tok_repr = encode_outputs["mv_repr"]
+        tok_mask = encode_outputs["mv_mask"]
 
         B, L, D = tok_repr.size()
 
@@ -71,8 +71,8 @@ class TokenPooling(nn.Module):
             padded_mask[b, :target_k] = 1
 
         return {
-            "tok_repr": padded_repr,
-            "tok_mask": padded_mask
+            "mv_repr": padded_repr,
+            "mv_mask": padded_mask
         }
 
     def encode(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -83,8 +83,8 @@ class TokenPooling(nn.Module):
         tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {
-            "tok_repr": tok_repr,
-            "tok_mask": attention_mask
+            "mv_repr": tok_repr,
+            "mv_mask": attention_mask
         }
 
     def encode_qry(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -96,7 +96,7 @@ class TokenPooling(nn.Module):
 
     @staticmethod
     def score(qry_repr: dict, doc_repr: dict, pairwise: bool = False) -> torch.Tensor:
-        return maxsum(mv_score(qry_repr["tok_repr"], doc_repr["tok_repr"], pairwise))
+        return maxsum(mv_score(qry_repr["mv_repr"], doc_repr["mv_repr"], pairwise))
 
     def forward(self, Q: tuple[torch.Tensor], D: tuple[torch.Tensor]) -> torch.Tensor:
         Q = self.encode_qry(*Q)
