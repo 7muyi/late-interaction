@@ -110,7 +110,13 @@ def run(
 
         if rank == 0:
             ckpt_path = os.path.join(config.checkpoint_path, f"model_epoch{epoch+1}.pt")
-            save_checkpoint(model.module, optimizer, scheduler, epoch + 1, global_step, config, ckpt_path)
+            save_checkpoint(
+                path=ckpt_path,
+                model_state_dict=model.module.state_dict(),
+                epoch=epoch + 1,
+                global_step=global_step,
+                config=config,
+            )
 
     if writer:
         writer.close()

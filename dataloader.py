@@ -22,7 +22,7 @@ class TSVDataset(Dataset):
     def __getitem__(self, idx: int) -> tuple[str, list[str]]:
         with open(self.file_path, "rb") as f:
             f.seek(self.offsets[idx])
-            line = f.readline().decode("utf-8").strip("\n\r")
+            line = f.readline().decode("utf-8").rstrip("\n\r")
 
         qry, *docs = line.split("\t")
         return qry, docs
