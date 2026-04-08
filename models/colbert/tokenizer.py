@@ -36,7 +36,7 @@ class Tokenizer(BaseTokenizer):
         texts: list[str],
         max_length: int,
         special_token_id: int
-    ) -> tuple[torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         """Converts texts into padded tensors of token ids and attention masks."""
         obj = self.tok(texts, padding="longest", truncation="longest_first", return_tensors="pt", max_length=max_length - 1)
 
@@ -45,14 +45,14 @@ class Tokenizer(BaseTokenizer):
 
         return ids, masks
 
-    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor]:
+    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         return self._tensorize(
             texts,
             self.qry_maxlen,
             self.Q_token_id
         )
 
-    def tensorize_doc(self, texts: list[str])  -> tuple[torch.Tensor]:
+    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         return self._tensorize(
             texts,
             self.doc_maxlen,

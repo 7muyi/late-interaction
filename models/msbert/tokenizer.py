@@ -23,7 +23,7 @@ class Tokenizer(BaseTokenizer):
         span_size: int,
         max_length: int,
         special_token: int
-    ) -> list[str]:
+    ) -> list[list[str]]:
         """Tokenizes a text into a list of tokens with special markers: [CLS], [Q]/[D], *tokenized_text*, [SEP]"""
         results = []
         for text in texts:
@@ -97,7 +97,7 @@ class Tokenizer(BaseTokenizer):
 
         return ids, masks
 
-    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor]:
+    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         return self._tensorize(
             texts,
             self.qry_span_size,
@@ -105,7 +105,7 @@ class Tokenizer(BaseTokenizer):
             self.Q_token_id
         )
 
-    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor]:
+    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         return self._tensorize(
             texts,
             self.doc_span_size,
