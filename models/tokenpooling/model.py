@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from transformers import AutoModel
 from scipy.cluster.hierarchy import linkage, fcluster
 
@@ -51,7 +52,7 @@ class TokenPooling(BaseModel):
             #     cluster_mean = doc_vecs[cluster_indices].mean(axis=0)
                 
             #     vec_tensor = torch.from_numpy(cluster_mean).to(tok_repr.device, dtype=tok_repr.dtype)
-            #     vec_tensor = nn.functional.normalize(vec_tensor, p=2, dim=-1)
+            #     vec_tensor = F.normalize(vec_tensor, p=2, dim=-1)
                 
             #     padded_repr[b, idx, :] = vec_tensor
             #     padded_mask[b, idx] = 1
@@ -67,7 +68,7 @@ class TokenPooling(BaseModel):
             counts = torch.bincount(labels_tensor).type_as(tok_repr).view(-1, 1)
 
             means = cluster_sums / counts
-            means = nn.functional.normalize(means, p=2, dim=-1)
+            means = F.normalize(means, p=2, dim=-1)
 
             padded_repr[b, :target_k] = means
             padded_mask[b, :target_k] = 1
@@ -81,7 +82,7 @@ class TokenPooling(BaseModel):
         outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
         tok_repr = self.proj(outputs)  # B, L, D
-        tok_repr = torch.nn.functional.normalize(tok_repr, p=2, dim=-1)
+        tok_repr = F.normalize(tok_repr, p=2, dim=-1)
         tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {

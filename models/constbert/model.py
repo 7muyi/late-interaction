@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from transformers import AutoModel
 
 from base import BaseModel
@@ -33,11 +34,11 @@ class ConstBERT(BaseModel):
 
         if L < self.doc_maxlen:
             tok_repr = tok_repr * tok_mask.unsqueeze(-1)
-            tok_repr = nn.functional.pad(tok_repr, (0, 0, 0, self.doc_maxlen - L))
+            tok_repr = F.pad(tok_repr, (0, 0, 0, self.doc_maxlen - L))
 
         pooled_repr = torch.einsum('bld,lc->bcd', tok_repr, self.W)
 
-        pooled_repr = nn.functional.normalize(pooled_repr, p=2, dim=-1)
+        pooled_repr = F.normalize(pooled_repr, p=2, dim=-1)
         pooled_mask = torch.ones(B, self.C, device=tok_repr.device)
         return {
             "mv_repr": pooled_repr,
@@ -48,7 +49,7 @@ class ConstBERT(BaseModel):
         outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
         tok_repr = self.proj(outputs)  # B, L, D
-        tok_repr = torch.nn.functional.normalize(tok_repr, p=2, dim=-1)
+        tok_repr = F.normalize(tok_repr, p=2, dim=-1)
         tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {
