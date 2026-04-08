@@ -5,13 +5,20 @@ from base.config import BaseConfig
 
 @dataclass
 class Config(BaseConfig):
-    # ColBERT parameters
+    # Model
     pretrained_model: str = "bert-base-uncased"
-    dim: int = 128
+    n_heads: int = 8
+    attn_dim: int = 128
+    out_dim: int = 128
+    qry_span_size: int = 4
+    doc_span_size: int = 4
+    dropout: float = 0.1
 
     # Tokenizer
     qry_maxlen: int = 32
     doc_maxlen: int = 256
+    # qry_span_size: int = 4
+    # doc_span_size: int = 4
 
     # Training
     dataset_path: str = ""

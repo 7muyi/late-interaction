@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from transformers import AutoModel
 
 from base import BaseModel
@@ -23,7 +24,7 @@ class ColBERT(BaseModel):
         outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
         tok_repr = self.proj(outputs)  # B, L, D
-        tok_repr = torch.nn.functional.normalize(tok_repr, p=2, dim=-1)
+        tok_repr = F.normalize(tok_repr, p=2, dim=-1)
         tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {

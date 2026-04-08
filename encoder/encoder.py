@@ -1,14 +1,17 @@
 import torch
 from tqdm import tqdm
 
-from base.tokenizer import BaseTokenizer
+from base import BaseTokenizer, BaseModel
 
 
 class Encoder:
-    def __init__(self, model, tokenizer: BaseTokenizer, device: str) -> None:
+    def __init__(self, model: BaseModel, tokenizer: BaseTokenizer, device: str) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
+
+        self.model.to(device)
+        self.model.eval()
 
     def _flatten(self, tensor: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return tensor[mask == 1], mask.sum(-1)

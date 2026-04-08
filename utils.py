@@ -1,8 +1,11 @@
 import os
+from typing import Any
 
 import torch
 import torch.distributed as dist
 from contextlib import nullcontext
+
+from base import *
 
 
 def set_seed(seed: int) -> None:
@@ -93,6 +96,11 @@ def log_metrics(writer, records: dict, step: int) -> None:
 def save_checkpoint(path: str, model_state_dict, **kwargs) -> None:
     payload = {"model_state_dict": model_state_dict, **kwargs}
     torch.save(payload, path)
+
+
+def load_checkpoint(path: str) -> dict[str, Any]:
+    ckpt = torch.load(path, weights_only=False)
+    return ckpt
 
 
 def to_device(batch: tuple[torch.Tensor, ...], device: torch.device) -> tuple[torch.Tensor, ...]:

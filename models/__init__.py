@@ -38,6 +38,14 @@ def _build_config(ConfigCls: Type, **kwargs: Any):
     unknown = set(kwargs) - set(raw)
     if unknown:
         raise ValueError(f"Unknown config keys: {sorted(unknown)}")
+    # Coerce string values (e.g. from CLI) to the expected field type
+    for k, v in kwargs.items():
+        if isinstance(v, str):
+            expected = type(raw[k])
+            if expected is bool:
+                kwargs[k] = v.lower() in ("1", "true", "yes")
+            elif expected is not str:
+                kwargs[k] = expected(v)
     raw.update(kwargs)
     return ConfigCls(**raw)
 

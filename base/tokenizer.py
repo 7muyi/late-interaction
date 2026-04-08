@@ -1,8 +1,6 @@
 import torch
 from transformers import AutoTokenizer
 
-from dataclasses import dataclass
-
 
 class BaseTokenizer:
     def __init__(self, config) -> None:
@@ -30,8 +28,8 @@ class BaseTokenizer:
     def tokenize_doc(self, texts: list[str]) -> list[list[str]]:
         raise NotImplementedError()
 
-    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor]:
+    def tensorize_qry(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         raise NotImplementedError()
 
-    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor]:
+    def tensorize_doc(self, texts: list[str]) -> tuple[torch.Tensor, ...]:
         raise NotImplementedError()
