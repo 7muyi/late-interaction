@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+from base.config import BaseConfig
+
 
 @dataclass
-class Config:
+class Config(BaseConfig):
     # Model
     pretrained_model: str = "bert-base-uncased"
     n_heads: int = 8

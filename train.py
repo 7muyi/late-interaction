@@ -115,7 +115,7 @@ def run(
                 model_state_dict=model.module.state_dict(),
                 epoch=epoch + 1,
                 global_step=global_step,
-                config=config,
+                config=config.to_dict(),
             )
 
     if writer:
