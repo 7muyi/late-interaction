@@ -7,6 +7,8 @@ from typing import Any, Type
 MODEL_REGISTRY: dict[str, dict[str, str]] = {
     "colbert": {"submodule": "colbert", "cls": "ColBERT"},
     "msbert": {"submodule": "msbert", "cls": "MSBert"},
+    "constbert": {"submodule": "constbert", "cls": "ConstBERT"},
+    "tokenpooling": {"submodule": "tokenpooling", "cls": "TokenPooling"}
 }
 
 
