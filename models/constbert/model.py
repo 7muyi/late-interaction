@@ -13,56 +13,43 @@ class ConstBERT(BaseModel):
         super().__init__()
         self.llm = AutoModel.from_pretrained(config.pretrained_model)
         self.proj = nn.Linear(self.llm.config.hidden_size, config.dim)
-
-        self.C = config.vectors_per_passage
-        self.doc_maxlen = config.doc_maxlen
-
-        self.W = nn.Parameter(torch.empty(self.doc_maxlen, self.C))
+        self.doc_project = nn.Linear(config.doc_maxlen, config.dim)
 
         self._init_weights()
 
     def _init_weights(self) -> None:
         nn.init.xavier_uniform_(self.proj.weight)
         nn.init.zeros_(self.proj.bias)
-        nn.init.xavier_uniform_(self.W)
+        nn.init.xavier_uniform_(self.doc_project.weight)
+        nn.init.zeros_(self.doc_project.bias)
 
-    def const_pooling(self, encode_outputs: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
-        tok_repr = encode_outputs["mv_repr"]
-        tok_mask = encode_outputs["mv_mask"]
+    def encode_qry(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
+        Q = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
-        B, L, D = tok_repr.size()
-
-        if L < self.doc_maxlen:
-            tok_repr = tok_repr * tok_mask.unsqueeze(-1)
-            tok_repr = F.pad(tok_repr, (0, 0, 0, self.doc_maxlen - L))
-
-        pooled_repr = torch.einsum('bld,lc->bcd', tok_repr, self.W)
-
-        pooled_repr = F.normalize(pooled_repr, p=2, dim=-1)
-        pooled_mask = torch.ones(B, self.C, device=tok_repr.device)
-        return {
-            "mv_repr": pooled_repr,
-            "mv_mask": pooled_mask
-        }
-
-    def encode(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
-        outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
-
-        tok_repr = self.proj(outputs)  # B, L, D
-        tok_repr = F.normalize(tok_repr, p=2, dim=-1)
-        tok_repr = tok_repr * attention_mask.unsqueeze(-1)
+        Q = self.proj(Q)  # B, L, D
+        Q = F.normalize(Q, p=2, dim=-1)
+        Q = Q * attention_mask.unsqueeze(-1)
 
         return {
-            "mv_repr": tok_repr,
+            "mv_repr": Q,
             "mv_mask": attention_mask
         }
 
-    def encode_qry(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
-        return self.encode(input_ids, attention_mask)
-
     def encode_doc(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> dict[str, torch.Tensor]:
-        encode_outputs = self.encode(input_ids, attention_mask)
-        return self.const_pooling(encode_outputs)
+        D = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
+
+        D = D.permute(0, 2, 1)  # B, H, L
+        D = self.doc_project(D)  # B, H, C
+        D = D.permute(0, 2, 1)  # B, C, H
+        D = self.proj(D)
+        D = F.normalize(D, p=2, dim=2)
+
+        mask = torch.ones(D.shape[0], D.shape[1], device=self.device, dtype=attention_mask.dtype)
+
+        return {
+            "mv_repr": D,
+            "mv_mask": mask
+        }
 
     @staticmethod
     def score(qry_repr: dict, doc_repr: dict, pairwise: bool = False) -> torch.Tensor:
