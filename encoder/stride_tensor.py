@@ -15,9 +15,9 @@ class StrideTensor:
             torch.cumsum(self.lengths, dim=0)[:-1]
         ))
 
-        max_stride = self.lengths.max().item()
-        if self.lengths[-1] < max_stride:
-            padding = torch.zeros(max_stride, self.dim, dtype=self.tensor.dtype, device=self.tensor.device)
+        self.max_stride = self.lengths.max().item()
+        if self.offsets[-1] + self.max_stride > self.tensor.size(0):
+            padding = torch.zeros(self.max_stride, self.dim, dtype=self.tensor.dtype, device=self.tensor.device)
             self.tensor = torch.cat((self.tensor, padding))
 
     @classmethod
@@ -32,11 +32,10 @@ class StrideTensor:
         # Get lengths and offsets for the requested sequences
         lengths = self.lengths[id: id + num]
         offsets = self.offsets[id: id + num]
-        max_stride = lengths.max().item()
 
-        tensor = _create_view(self.tensor, max_stride, self.dim)[offsets].to(self.device)
+        tensor = _create_view(self.tensor, self.max_stride, self.dim)[offsets].to(self.device)
         # Create mask to zero out padding positions
-        mask = _create_mask(lengths, max_stride).to(tensor.device)
+        mask = _create_mask(lengths, self.max_stride).to(tensor.device)
         return tensor * mask.unsqueeze(-1)
 
     def __len__(self) -> int:
