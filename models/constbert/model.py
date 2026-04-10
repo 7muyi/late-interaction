@@ -44,7 +44,7 @@ class ConstBERT(BaseModel):
         D = self.proj(D)
         D = F.normalize(D, p=2, dim=2)
 
-        mask = torch.ones(D.shape[0], D.shape[1], device=self.device, dtype=attention_mask.dtype)
+        mask = torch.ones(D.shape[0], D.shape[1], device=input_ids.device, dtype=attention_mask.dtype)
 
         return {
             "mv_repr": D,
