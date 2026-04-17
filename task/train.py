@@ -29,7 +29,9 @@ if __name__ == "__main__":
     model = registry.get_model_cls(config.model.name).from_config(config.model)
     tokenizer = registry.get_tokenizer_cls(config.tokenizer.name).from_config(config.tokenizer)
     dataloader = get_dataloader(
-        config.run.dataset_path,
+        config.run.triplet_path,
+        config.run.queries_path,
+        config.run.corpus_path,
         tokenizer,
         config.run.bsize,
         config.run.rank,
