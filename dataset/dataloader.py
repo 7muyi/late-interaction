@@ -2,7 +2,7 @@ import json
 
 from torch.utils.data import Dataset, DataLoader, DistributedSampler
 
-from tokenizers import BaseTokenizer
+from tokenizer import BaseTokenizer
 
 
 class IRDataset(Dataset):

@@ -64,8 +64,8 @@ def run(
 
                     # Labels: each query's positive doc is at index i*N (first doc in each group)
                     labels = torch.arange(scores.shape[0], dtype=torch.long, device=device) * N
-                    temperature = config.temperature if config.get("temperature", None) is not None else model.module.temperature
-                    loss = torch.nn.functional.cross_entropy(scores / temperature, labels, reduction="mean")
+                    # temperature = config.temperature if config.get("temperature", None) is not None else model.module.temperature
+                    loss = torch.nn.functional.cross_entropy(scores, labels, reduction="mean")
 
                 # Scale loss for gradient accumulation
                 norm_loss = loss / config.accumulation_steps

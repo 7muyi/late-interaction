@@ -114,7 +114,7 @@ class TokenPooling(BaseModel, BaseEncoder):
         D = self.encode_doc(*D)
 
         # default to in-negative sampling, so pairwise=False
-        return self.score(Q, D, False)
+        return self.score(Q, D, False) / self.temperature
 
     @classmethod
     def from_config(cls, config):

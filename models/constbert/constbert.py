@@ -14,6 +14,7 @@ from models.base_model import BaseModel, BaseEncoder
 class ConstBERT(BaseModel, BaseEncoder):
     def __init__(self, pretrained_model: str, dim: int, doc_maxlen: int, temperature: float = 1.0) -> None:
         super().__init__()
+        self.doc_maxlen = doc_maxlen
         self.llm = AutoModel.from_pretrained(pretrained_model)
         self.proj = nn.Linear(self.llm.config.hidden_size, dim)
         self.doc_project = nn.Linear(doc_maxlen, dim)
@@ -67,7 +68,7 @@ class ConstBERT(BaseModel, BaseEncoder):
         D = self.encode_doc(*D)
 
         # default to in-negative sampling, so pairwise=False
-        return self.score(Q, D, False)
+        return self.score(Q, D, False) / self.temperature
 
     @classmethod
     def from_config(cls, config):

@@ -27,7 +27,7 @@ class Registry:
     def register_tokenizer_name(cls, name: str):
 
         def warp(tokenizer_cls):
-            from tokenizers import BaseTokenizer
+            from tokenizer import BaseTokenizer
             assert issubclass(
                 tokenizer_cls, BaseTokenizer
             ), f"Registered tokenizer '{tokenizer_cls.__name__}' must be a subclass of BaseTokenizer"

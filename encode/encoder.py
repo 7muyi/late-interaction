@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 
 from models import BaseModel
-from tokenizers import BaseTokenizer
+from tokenizer import BaseTokenizer
 
 
 class Encoder:

@@ -2,14 +2,14 @@ import argparse
 from omegaconf import OmegaConf
 
 from common import registry
-from train.utils import setup_ddp, cleanup_ddp, set_seed
-from train.runner import run
+from trainer.utils import setup_ddp, cleanup_ddp, set_seed
+from trainer.runner import run
 from dataset import get_dataloader
 
 # Import to trigger @registry.register_* decorators
 from models import *
-from tokenizers import *
-from train.optim import *
+from tokenizer import *
+from trainer.optim import *
 
 
 def parse_args():

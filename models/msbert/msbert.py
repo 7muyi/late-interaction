@@ -104,7 +104,7 @@ class MSBert(BaseModel, BaseEncoder):
         attention_mask: torch.Tensor,
         span_size: int | None = None
     ) -> dict[str, torch.Tensor]:
-        outputs = self.llm(input_ids, attention_mask)[0]  # B, L, H
+        outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
         cls_repr = self.cls_proj(outputs[:, 0])  # B, D
         cls_repr = F.normalize(cls_repr, p=2, dim=-1)
@@ -139,7 +139,7 @@ class MSBert(BaseModel, BaseEncoder):
         Q = self.encode_qry(*Q)
         D = self.encode_doc(*D)
 
-        return self.score(Q, D, False)
+        return self.score(Q, D, False) / self.temperature
 
     @classmethod
     def from_config(cls, config):

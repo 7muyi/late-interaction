@@ -8,7 +8,7 @@ from common import registry
 
 # Import to trigger @registry.register_* decorators
 from models import *
-from tokenizers import *
+from tokenizer import *
 
 from retrieve.utils import load_jsonl
 from retrieve.encode import encode_queries, encode_docs
