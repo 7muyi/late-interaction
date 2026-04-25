@@ -74,7 +74,7 @@ def get_param_groups(model, lr_backbone: float, lr_other: float):
     other_params = [p for p in model.parameters() if id(p) not in llm_ids]
     return [
         {"params": llm_params, "lr": lr_backbone},
-        {"params": other_params, "lr": lr_other}
+        {"params": other_params, "lr": lr_other},
     ]
 
 

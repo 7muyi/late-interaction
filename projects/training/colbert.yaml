@@ -1,0 +1,27 @@
+model:
+  name: colbert
+  pretrained_model: bert-base-uncased
+  dim: 128
+tokenizer:
+  name: std_toker
+  pretrained_model: bert-base-uncased
+  qry_maxlen: 32
+  doc_maxlen: 256
+  use_prefix: true
+run:
+  triplet_path:
+  queries_path:
+  corpus_path:
+  bsize: 16
+  lr_backbone: 5e-6
+  lr_other: 1e-5
+  lr_temp: 1e-3
+  temperature: 0.1
+  lr_sched: cosine_with_warmup
+  warmup: 1000
+  accumulation_steps: 4
+  min_lr_ratio: 0.1
+  checkpoint_path:
+  amp: true
+  epoch: 10
+  log_interval: 25

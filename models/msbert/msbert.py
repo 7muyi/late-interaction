@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -69,7 +67,6 @@ class MSBert(BaseModel, BaseEncoder):
         attn_dim: int,
         n_heads: int,
         dropout: float,
-        temperature: float = 1.0
     ) -> None:
         super().__init__()
         self.qry_span_size = qry_span_size
@@ -84,13 +81,8 @@ class MSBert(BaseModel, BaseEncoder):
             dropout
         )
         self.span_proj = nn.Linear(self.llm.config.hidden_size, out_dim)
-        self.log_temperature = nn.Parameter(torch.tensor(math.log(temperature)))
 
         self._init_weights()
-
-    @property
-    def temperature(self) -> torch.Tensor:
-        return self.log_temperature.exp().clamp(min=0.01, max=0.1)
 
     def _init_weights(self) -> None:
         for module in [self.cls_proj, self.span_proj]:
@@ -139,7 +131,7 @@ class MSBert(BaseModel, BaseEncoder):
         Q = self.encode_qry(*Q)
         D = self.encode_doc(*D)
 
-        return self.score(Q, D, False) / self.temperature
+        return self.score(Q, D, False)
 
     @classmethod
     def from_config(cls, config):
@@ -150,6 +142,5 @@ class MSBert(BaseModel, BaseEncoder):
         attn_dim = config.get("attn_dim", 128)
         n_heads = config.get("n_heads", 8)
         dropout = config.get("dropout", 0.1)
-        temperature = config.get("temperature", 1.0)
 
-        return cls(pretrained_model, qry_span_size, doc_span_size, out_dim, attn_dim, n_heads, dropout, temperature)
+        return cls(pretrained_model, qry_span_size, doc_span_size, out_dim, attn_dim, n_heads, dropout)

@@ -1,7 +1,9 @@
 import contextlib
+import math
 import os
 
 import torch
+import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
@@ -24,8 +26,15 @@ def run(
         find_unused_parameters=True
     )
 
+    if config.lr_temp > 0:
+        log_temperature = nn.Parameter(torch.tensor(math.log(config.temperature), device=device))
+        temp_param_group = [{"params": [log_temperature], "lr": config.lr_temp}]
+    else:
+        log_temperature = torch.tensor(math.log(config.temperature), device=device)
+        temp_param_group = []
+
     param_groups = get_param_groups(model.module, config.lr_backbone, config.lr_other)
-    optimizer = torch.optim.AdamW(param_groups)
+    optimizer = torch.optim.AdamW([*param_groups, *temp_param_group])
     scheduler = registry.get_lr_scheduler_func(config.lr_sched)(
         optimizer=optimizer,
         num_warmup_steps=config.warmup,
@@ -64,8 +73,8 @@ def run(
 
                     # Labels: each query's positive doc is at index i*N (first doc in each group)
                     labels = torch.arange(scores.shape[0], dtype=torch.long, device=device) * N
-                    # temperature = config.temperature if config.get("temperature", None) is not None else model.module.temperature
-                    loss = torch.nn.functional.cross_entropy(scores, labels, reduction="mean")
+                    temperature = log_temperature.exp().clamp(min=0.01, max=0.1)
+                    loss = torch.nn.functional.cross_entropy(scores / temperature, labels, reduction="mean")
 
                 # Scale loss for gradient accumulation
                 norm_loss = loss / config.accumulation_steps
@@ -82,9 +91,16 @@ def run(
                 # Only the main process (rank 0) logs the information
                 if is_main_process():
                     if global_step % config.log_interval == 0:
+                        # note: Updated the information required to be saved in the log
                         log_metrics(
                             writer,
-                            {"loss": accumulation_loss / accumulation_count},
+                            {
+                                "loss": accumulation_loss / accumulation_count,
+                                "llm_lr": optimizer.param_groups[0]["lr"],
+                                "other_lr": optimizer.param_groups[1]["lr"],
+                                **({"temp_lr": optimizer.param_groups[2]["lr"]} if config.lr_temp > 0 else {}),
+                                "temperature": log_temperature.exp().clamp(min=0.01, max=0.1).item()
+                            },
                             global_step
                         )
                         accumulation_loss = 0.0
@@ -95,6 +111,7 @@ def run(
             save_checkpoint(
                 path=ckpt_path,
                 model_state_dict=model.module.state_dict(),
+                log_temperature=log_temperature.item(),
                 epoch=epoch + 1,
                 global_step=global_step
             )

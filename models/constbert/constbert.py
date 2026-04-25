@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,19 +10,14 @@ from models.base_model import BaseModel, BaseEncoder
 
 @registry.register_model_name("constbert")
 class ConstBERT(BaseModel, BaseEncoder):
-    def __init__(self, pretrained_model: str, dim: int, doc_maxlen: int, temperature: float = 1.0) -> None:
+    def __init__(self, pretrained_model: str, dim: int, doc_maxlen: int) -> None:
         super().__init__()
         self.doc_maxlen = doc_maxlen
         self.llm = AutoModel.from_pretrained(pretrained_model)
         self.proj = nn.Linear(self.llm.config.hidden_size, dim)
         self.doc_project = nn.Linear(doc_maxlen, dim)
-        self.log_temperature = nn.Parameter(torch.tensor(math.log(temperature)))
 
         self._init_weights()
-
-    @property
-    def temperature(self) -> torch.Tensor:
-        return self.log_temperature.exp().clamp(min=0.01, max=0.1)
 
     def _init_weights(self) -> None:
         nn.init.xavier_uniform_(self.proj.weight)
@@ -68,13 +61,12 @@ class ConstBERT(BaseModel, BaseEncoder):
         D = self.encode_doc(*D)
 
         # default to in-negative sampling, so pairwise=False
-        return self.score(Q, D, False) / self.temperature
+        return self.score(Q, D, False)
 
     @classmethod
     def from_config(cls, config):
         pretrained_model = config.get("pretrained_model", "bert-base-uncased")
         dim = config.get("dim", 128)
         doc_maxlen = config.get("doc_maxlen", 32)
-        temperature = config.get("temperature", 1.0)
 
-        return cls(pretrained_model, dim, doc_maxlen, temperature)
+        return cls(pretrained_model, dim, doc_maxlen)
