@@ -1,0 +1,9 @@
+tokenizer:
+  name: multi_qd_span_toker
+  pretrained_model: bert-base-uncased
+  qry_maxlen: 32
+  doc_maxlen: 256
+  qry_span_size: 4
+  doc_span_size: 4
+  qry_n_qd_tokens: 8
+  doc_n_qd_tokens: 64
