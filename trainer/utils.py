@@ -68,13 +68,34 @@ class MixedPrecisionManager():
         optimizer.zero_grad(set_to_none=True)
 
 
-def get_param_groups(model, lr_backbone: float, lr_other: float):
-    llm_params = list(model.llm.parameters())
-    llm_ids = {id(p) for p in llm_params}
-    other_params = [p for p in model.parameters() if id(p) not in llm_ids]
+def get_param_groups(
+    model,
+    lr_backbone: float,
+    lr_other: float,
+    named_param_lrs: dict[str, float] = {},
+) -> list[dict]:
+    """
+    named_param_lrs: exact parameter names (from model.named_parameters()) mapped
+    to their own learning rates, e.g. {"sim_temp": 1e-3}.
+    """
+    llm_ids = {id(p) for p in model.llm.parameters()}
+
+    special_ids: set[int] = set()
+    special_groups: list[dict] = []
+    for name, p in model.named_parameters():
+        if name in named_param_lrs:
+            special_ids.add(id(p))
+            special_groups.append({"params": [p], "lr": named_param_lrs[name], "name": name})
+
+    other_params = [
+        p for p in model.parameters()
+        if id(p) not in llm_ids and id(p) not in special_ids
+    ]
+
     return [
-        {"params": llm_params, "lr": lr_backbone},
-        {"params": other_params, "lr": lr_other},
+        {"params": list(model.llm.parameters()), "lr": lr_backbone, "name": "llm"},
+        {"params": other_params, "lr": lr_other, "name": "other"},
+        *special_groups,
     ]
 
 

@@ -12,11 +12,11 @@ from models.base_model import BaseModel, BaseEncoder
 
 @registry.register_model_name("colbertv2")
 class ColBERTv2(BaseModel, BaseEncoder):
-    def __init__(self, pretrained_model: str, dim: int, sim_log_temp: float = 1.0, topk: int = 32) -> None:
+    def __init__(self, pretrained_model: str, dim: int, sim_temp: float = 1.0, topk: int = 32) -> None:
         super().__init__()
         self.llm = AutoModel.from_pretrained(pretrained_model)
         self.proj = nn.Linear(self.llm.config.hidden_size, dim)
-        self.sim_log_temp = nn.Parameter(torch.tensor(math.log(sim_log_temp)))
+        self.sim_log_temp = nn.Parameter(torch.tensor(math.log(sim_temp)))
         self.topk = topk
 
         self._init_weights()
@@ -60,7 +60,7 @@ class ColBERTv2(BaseModel, BaseEncoder):
     def from_config(cls, config):
         pretrained_model = config.get("pretrained_model", "bert-base-uncased")
         dim = config.get("dim", 128)
-        sim_log_temp = config.get("sim_log_temp", 1.0)
+        sim_temp = config.get("sim_temp", 1.0)
         topk = config.get("topk", 32)
 
-        return cls(pretrained_model, dim, sim_log_temp, topk)
+        return cls(pretrained_model, dim, sim_temp, topk)

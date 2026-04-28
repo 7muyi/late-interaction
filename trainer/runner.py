@@ -28,12 +28,12 @@ def run(
 
     if config.lr_temp > 0:
         log_temperature = nn.Parameter(torch.tensor(math.log(config.temperature), device=device))
-        temp_param_group = [{"params": [log_temperature], "lr": config.lr_temp}]
+        temp_param_group = [{"params": [log_temperature], "lr": config.lr_temp, "name": "temp"}]
     else:
         log_temperature = torch.tensor(math.log(config.temperature), device=device)
         temp_param_group = []
 
-    param_groups = get_param_groups(model.module, config.lr_backbone, config.lr_other)
+    param_groups = get_param_groups(model.module, config.lr_backbone, config.lr_other, config.named_param_lrs)
     optimizer = torch.optim.AdamW([*param_groups, *temp_param_group])
     scheduler = registry.get_lr_scheduler_func(config.lr_sched)(
         optimizer=optimizer,
@@ -96,10 +96,9 @@ def run(
                             writer,
                             {
                                 "loss": accumulation_loss / accumulation_count,
-                                "llm_lr": optimizer.param_groups[0]["lr"],
-                                "other_lr": optimizer.param_groups[1]["lr"],
-                                **({"temp_lr": optimizer.param_groups[2]["lr"]} if config.lr_temp > 0 else {}),
-                                "temperature": log_temperature.exp().clamp(min=0.01, max=0.1).item()
+                                **{f"{g['name']}_lr": g["lr"] for g in optimizer.param_groups},
+                                "temperature": log_temperature.exp().clamp(min=0.01, max=0.1).item(),
+                                "sim_temperature": model.module.sim_temperature.item()  # note: only for ColBERTv2's soft-maxsim
                             },
                             global_step
                         )

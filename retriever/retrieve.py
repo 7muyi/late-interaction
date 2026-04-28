@@ -6,7 +6,7 @@ from tqdm import tqdm
 from common import registry
 import scorer  # noqa: F401 — side-effect: registers scorer functions
 
-from retrieve.utils import Encodings
+from retriever.utils import Encodings
 
 
 def retrieve(
