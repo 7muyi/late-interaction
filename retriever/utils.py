@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import torch
 
-from encode import StrideTensor
+from encoder import StrideTensor
 
 
 @dataclass

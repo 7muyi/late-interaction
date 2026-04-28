@@ -1,11 +1,14 @@
+import os
+import pathlib
+import sys
+sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent))
 import argparse
 import time
 
 from omegaconf import OmegaConf
 
-from retrieve.utils import load_encoding, load_qrels
-from retrieve.retrieve import retrieve
-from retrieve.evaluate import evaluate
+from retriever.utils import load_encoding
+from retriever.retrieve import retrieve
 
 
 def parse_args():
