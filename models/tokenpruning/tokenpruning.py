@@ -30,6 +30,7 @@ class TokenPruning(BaseModel, BaseEncoder):
 
         combined_norm = torch.sqrt(base_repr.norm(dim=-1, keepdim=True)**2 + proj_repr.norm(dim=-1, keepdim=True)**2)
         tok_repr = base_repr / combined_norm.clamp(min=1e-9)
+        tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {
             "mv_repr": tok_repr,
@@ -45,6 +46,7 @@ class TokenPruning(BaseModel, BaseEncoder):
 
         norm_mask = tok_repr.norm(dim=-1) >= self.norm_threshold
         attention_mask = torch.logical_and(norm_mask, attention_mask)
+        tok_repr = tok_repr * attention_mask.unsqueeze(-1)
 
         return {
             "mv_repr": tok_repr,
@@ -53,25 +55,10 @@ class TokenPruning(BaseModel, BaseEncoder):
 
     def score(self, qry_repr: dict, doc_repr: dict, pairwise: bool = False) -> torch.Tensor:
         return registry.get_scorer("maxsim_sum")(qry_repr, doc_repr, pairwise)
-    
-    def score(self, qry_repr: dict, doc_repr: dict, pairwise: bool = False) -> torch.Tensor:
-        Q = qry_repr["mv_repr"]
-        D = doc_repr["mv_repr"]
-        D_mask = doc_repr["mv_mask"]
-
-        scores = torch.matmul(Q, D.transpose(1, 2))
-
-        mask_for_fill = D_mask.unsqueeze(1).logical_not() 
-        scores = scores.masked_fill(mask_for_fill, float("-inf"))
-
-        max_scores = torch.relu(scores).max(dim=-1).values
-        final_score = max_scores.sum(dim=1)
-
-        return final_score
 
     def forward(self, Q: tuple[torch.Tensor], D: tuple[torch.Tensor]) -> torch.Tensor:
-        Q = self.encode_qry(*Q)
-        D = self.encode_doc(*D)
+        Q = self.encode(*Q)
+        D = self.encode(*D)
 
         return self.score(Q, D, False)
 
