@@ -64,7 +64,7 @@ def load_encoding(dir_path: str, device: str) -> Encodings:
 
 
 def load_qrels(path: str) -> dict[str, dict[str, int]]:
-    """Read TREC qrels: 'qid 0 did relevance' per line.
+    """Read tab-delimited qrels: 'qid\\tdid\\trelevance' per line.
 
     Returns {qid_str: {did_str: relevance_int}}.
     """
@@ -74,7 +74,7 @@ def load_qrels(path: str) -> dict[str, dict[str, int]]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.rstrip().split("\t")
+            parts = line.split("\t")
             qid, did, rel = parts[0], parts[1], int(parts[2])
             qrels.setdefault(qid, {})[did] = rel
     return qrels

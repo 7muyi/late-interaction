@@ -9,7 +9,6 @@ from common.registry import registry
 from models.base_model import BaseModel, BaseEncoder
 
 
-# TODO: update
 @registry.register_model_name("tokenpooling")
 class TokenPooling(BaseModel, BaseEncoder):
     def __init__(self, pretrained_model: str, dim: int, pooling_factor: int) -> None:
@@ -38,11 +37,13 @@ class TokenPooling(BaseModel, BaseEncoder):
         padded_repr = torch.zeros(B, max_k, D, dtype=tok_repr.dtype, device=tok_repr.device)
         padded_mask = torch.zeros(B, max_k, dtype=tok_mask.dtype, device=tok_repr.device)
 
+        tok_repr_np = tok_repr.detach().cpu().numpy()
+
         for b in range(B):
             v_len = valid_lens[b].item()
             target_k = num_clusters_list[b].item()
 
-            doc_vecs = tok_repr[b, :v_len, :].detach().cpu().numpy()
+            doc_vecs = tok_repr_np[b, :v_len, :]
 
             Z = linkage(doc_vecs, method="ward")
             labels = fcluster(Z, t=target_k, criterion="maxclust")
@@ -92,7 +93,6 @@ class TokenPooling(BaseModel, BaseEncoder):
         Q = self.encode_qry(*Q)
         D = self.encode_doc(*D)
 
-        # default to in-negative sampling, so pairwise=False
         return self.score(Q, D, False)
 
     @classmethod

@@ -17,6 +17,7 @@ class Encoder:
     def to(self, device: str):
         self.device = device
         self.model.to(device)
+        self.model.eval()
 
     def _flatten(self, tensor: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return tensor[mask == 1], mask.sum(-1)
