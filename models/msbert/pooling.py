@@ -76,19 +76,15 @@ class _MSBertPoolBase(BaseModel, BaseEncoder):
     ) -> dict[str, torch.Tensor]:
         outputs = self.llm(input_ids, attention_mask=attention_mask)[0]  # B, L, H
 
-        qd = outputs[:, 1].unsqueeze(1)  # B, 1, H
         tokens = outputs[:, 2:-1]
         token_mask = attention_mask[:, 2:-1]
 
         pooled = self.span_pooling(tokens, token_mask, span_size)  # B, N, H
-        combined = torch.cat([qd, pooled], dim=1)  # B, N+1, H
 
-        span_repr = self.span_proj(combined)
+        span_repr = self.span_proj(pooled)
         span_repr = F.normalize(span_repr, p=2, dim=-1)
 
-        content_mask = token_mask.view(token_mask.size(0), -1, span_size).any(-1)  # B, N
-        qd_mask = attention_mask[:, 1].unsqueeze(1).bool()  # B, 1
-        span_mask = torch.cat([qd_mask, content_mask], dim=1)  # B, N+1
+        span_mask = token_mask.view(token_mask.size(0), -1, span_size).any(-1)  # B, N
         span_repr = span_repr * span_mask.unsqueeze(-1)
 
         return {"mv_repr": span_repr, "mv_mask": span_mask}

@@ -235,13 +235,9 @@ class MSBert_ABL_CLS(BaseModel, BaseEncoder):
             span_size
         )  # B, N, H
 
-        qd = outputs[:, 1].unsqueeze(1)  # B, 1, H
-        combined = torch.cat([qd, attn_out], dim=1)  # B, N+1, H
-        span_repr = F.normalize(self.span_proj(combined), p=2, dim=-1)
+        span_repr = F.normalize(self.span_proj(attn_out), p=2, dim=-1)
 
-        content_mask = attention_mask[:, 2:-1].view(attention_mask.size(0), -1, span_size).any(-1)
-        qd_mask = attention_mask[:, 1].unsqueeze(1).bool()
-        span_mask = torch.cat([qd_mask, content_mask], dim=1)
+        span_mask = attention_mask[:, 2:-1].view(attention_mask.size(0), -1, span_size).any(-1)
         span_repr = span_repr * span_mask.unsqueeze(-1)
 
         return {"mv_repr": span_repr, "mv_mask": span_mask}
