@@ -1,3 +1,4 @@
+import os
 import json
 
 import torch
@@ -49,7 +50,8 @@ def retrieve(
             qid += 1
 
     if output_path is not None:
-        with open(output_path, "w") as f:
+        os.makedirs(output_path, exist_ok=True)
+        with open(os.path.join(output_path, f"result_{topk}.json"), "w") as f:
             json.dump(results, f, indent=4)
 
     return results

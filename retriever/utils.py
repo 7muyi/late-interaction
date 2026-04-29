@@ -74,8 +74,8 @@ def load_qrels(path: str) -> dict[str, dict[str, int]]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split()
-            qid, did, rel = parts[0], parts[2], int(parts[3])
+            parts = line.rstrip().split("\t")
+            qid, did, rel = parts[0], parts[1], int(parts[2])
             qrels.setdefault(qid, {})[did] = rel
     return qrels
 

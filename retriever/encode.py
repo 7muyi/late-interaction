@@ -28,7 +28,7 @@ def encode_texts(
             devices
         )
     elif len(devices) == 1:
-        encoder.model.to(devices[0])
+        encoder.to(devices[0])
         encoding = getattr(encoder, method)(texts, bsize, show_progress)
     else:
         raise ValueError("`devices` should not to be empty.")
@@ -59,7 +59,7 @@ def _encode_parallel(
 
     k = min(len(devices), total)
     device_encoders = [
-        Encoder(copy.deepcopy(encoder.model), encoder.tokenizer, dev)
+        Encoder(copy.deepcopy(encoder.model), copy.deepcopy(encoder.tokenizer), dev)
         for dev in devices[:k]
     ]
 

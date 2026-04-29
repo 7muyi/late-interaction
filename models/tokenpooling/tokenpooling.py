@@ -9,6 +9,7 @@ from common.registry import registry
 from models.base_model import BaseModel, BaseEncoder
 
 
+# TODO: update
 @registry.register_model_name("tokenpooling")
 class TokenPooling(BaseModel, BaseEncoder):
     def __init__(self, pretrained_model: str, dim: int, pooling_factor: int) -> None:
@@ -22,7 +23,7 @@ class TokenPooling(BaseModel, BaseEncoder):
     def _init_weights(self) -> None:
         nn.init.xavier_uniform_(self.proj.weight)
         nn.init.zeros_(self.proj.bias)
-    
+
     def hierarchical_pooling(self, encode_outputs: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         tok_repr = encode_outputs["mv_repr"]
         tok_mask = encode_outputs["mv_mask"]
@@ -43,23 +44,9 @@ class TokenPooling(BaseModel, BaseEncoder):
 
             doc_vecs = tok_repr[b, :v_len, :].detach().cpu().numpy()
 
-            Z = linkage(doc_vecs, method='ward')
-            labels = fcluster(Z, t=target_k, criterion='maxclust')
+            Z = linkage(doc_vecs, method="ward")
+            labels = fcluster(Z, t=target_k, criterion="maxclust")
 
-            # actual_clusters = np.unique(labels)
-            # for idx, cluster_id in enumerate(actual_clusters):
-            #     cluster_indices = np.where(labels == cluster_id)
-            #     cluster_mean = doc_vecs[cluster_indices].mean(axis=0)
-
-            #     vec_tensor = torch.from_numpy(cluster_mean).to(tok_repr.device, dtype=tok_repr.dtype)
-            #     vec_tensor = F.normalize(vec_tensor, p=2, dim=-1)
-
-            #     padded_repr[b, idx, :] = vec_tensor
-            #     padded_mask[b, idx] = 1
-
-            """
-            Optimized tensor version of the loop above.
-            """
             labels_tensor = torch.from_numpy(labels).long().to(tok_repr.device) - 1
 
             cluster_sums = torch.zeros(target_k, D, device=tok_repr.device, dtype=tok_repr.dtype)
